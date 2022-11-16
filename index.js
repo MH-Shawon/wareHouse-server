@@ -39,29 +39,21 @@ async function run() {
         });
 
         //  updated Quantity 
-        app.put("/phones/:id", async (req, res) => {
-            const id = req.params.id;
-            const updatedQuantity = req.body;
-            const filter = { _id: ObjectId(id) };
-            const options = { upsert: true };
-            const updatedDoc = {
-              $set: {
-                quantity: updatedQuantity.quantity,
-              },
-            };
-            const result = await itemsCollection.updateOne(
-              filter,
-              updatedDoc,
-              options
-            );
-            res.send(result);
-          });
+        
 
         // post method 
 
         app.post("/phones", async (req, res) => {
             const newItem = req.body;
-            const result = await itemsCollection.insertOne(newItem);
+            const result = await phoneCollection.insertOne(newItem);
+            res.send(result);
+          });
+
+
+          app.delete('/phones/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const result = await phoneCollection.deleteOne(query);
             res.send(result);
           });
     }
