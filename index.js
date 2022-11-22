@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+var jwt = require('jsonwebtoken');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -10,7 +11,20 @@ app.use(cors());
 app.use(express.json());
 
 
-
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'UnAuthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
 
 
 
@@ -20,26 +34,28 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
 
-    try{
+    try {
         const phoneCollection = client.db('phoneWarehouse').collection('phoneItem');
-        
-        app.get('/phones', async(req,res)=>{
+
+        const orderCollection = client.db('phoneWarehouse').collection('order');
+
+        app.get('/phones', async (req, res) => {
             const query = {};
             const cursor = phoneCollection.find(query);
             const phones = await cursor.toArray();
             res.send(phones);
-            console.log(phones)
+
         });
 
-        app.get('/phones/:id', async(req,res)=>{
+        app.get('/phones/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id:ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const phone = await phoneCollection.findOne(query);
             res.send(phone)
         });
 
-        //  updated Quantity 
-        
+
+
 
         // post method 
 
@@ -47,27 +63,70 @@ async function run() {
             const newItem = req.body;
             const result = await phoneCollection.insertOne(newItem);
             res.send(result);
-          });
+        });
 
 
-          app.delete('/phones/:id', async(req,res)=>{
+        app.delete('/phones/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await phoneCollection.deleteOne(query);
             res.send(result);
-          });
+        });
+
+
+        // jwt impliment 
+
+        app.post('/accesstoken', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken });
+        })
+
+
+
+        //   order collection  api
+        app.get('/orders', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.query.email;
+
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const cursor = orderCollection.find(query);
+                const orders = await cursor.toArray();
+                res.send(orders);
+            }
+            else{
+                res.status(403).send({message: 'forbidden access'})
+            }
+        });
+        app.post("/order", async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result);
+        });
+
+        //   order delete
+
+        app.delete('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
+            res.send(result);
+        });
     }
-    finally{}
+    finally { }
 
 }
 
 run().catch(console.dir);
 
 
-app.get('/', (req,res)=>{
+app.get('/', (req, res) => {
     res.send('WareHOuse server is running');
 })
 
-app.listen(port, ()=>{
+app.listen(port, () => {
     console.log('Listening to port', port);
 })
