@@ -28,7 +28,8 @@ function verifyJWT(req, res, next) {
 
 
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.b3p90m3.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@warehouse.xxy6edy.mongodb.net/?retryWrites=true&w=majority&appName=warehouse`;
+
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
@@ -40,7 +41,7 @@ async function run() {
         const orderCollection = client.db('phoneWarehouse').collection('order');
 
         app.get('/phones', async (req, res) => {
-            const query = {};
+            
             const cursor = phoneCollection.find(query);
             const phones = await cursor.toArray();
             res.send(phones);
