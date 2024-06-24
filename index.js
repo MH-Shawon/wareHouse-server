@@ -84,10 +84,11 @@ async function run() {
             res.send({ accessToken });
         })
 
+       
 
 
         //   order collection  api
-        app.get('/orders', verifyJWT, async (req, res) => {
+        app.get('/orders', verifyJWT,  async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
 
