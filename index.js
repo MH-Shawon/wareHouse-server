@@ -88,7 +88,7 @@ async function run() {
 
 
         //   order collection  api
-        app.get('/orders', verifyJWT,  async (req, res) => {
+        app.get('/orders',   async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
 
